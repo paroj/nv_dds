@@ -1,3 +1,6 @@
+// This software contains source code provided by NVIDIA Corporation.
+// License: http://developer.download.nvidia.com/licenses/general_license.txt
+
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Description:
