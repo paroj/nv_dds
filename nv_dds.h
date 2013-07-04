@@ -2,6 +2,7 @@
 
 #include <string>
 #include <deque>
+#include <istream>
 
 #include <assert.h>
 #include <stdint.h>
@@ -193,6 +194,8 @@ public:
             const CTexture &negativeY, const CTexture &positiveZ, const CTexture &negativeZ);
 
     void clear();
+
+    bool load(std::istream& is, bool flipImage = true);
     bool load(const std::string& filename, bool flipImage = true);
     bool save(const std::string& filename, bool flipImage = true);
 

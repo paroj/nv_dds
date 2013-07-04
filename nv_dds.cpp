@@ -159,7 +159,7 @@
 #include "nv_dds.h"
 
 #include <cstring>
-#include <cstdio>
+#include <fstream>
 
 #include <assert.h>
 
@@ -259,27 +259,31 @@ void CDDSImage::create_textureCubemap(unsigned int format, unsigned int componen
 // filename - fully qualified name of DDS image
 // flipImage - specifies whether image is flipped on load, default is true
 bool CDDSImage::load(const string& filename, bool flipImage) {
-    assert(filename.length() != 0);
+    assert(!filename.empty());
 
+    fstream fs(filename.c_str());
+    return load(fs, flipImage);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// loads DDS image
+//
+// is - istream to read the image from
+// flipImage - specifies whether image is flipped on load, default is true
+bool CDDSImage::load(istream& is, bool flipImage) {
     // clear any previously loaded images
     clear();
 
-    // open file
-    FILE *fp = fopen(filename.c_str(), "rb");
-    if (fp == NULL)
-        return false;
-
     // read in file marker, make sure its a DDS file
     char filecode[4];
-    fread(filecode, 1, 4, fp);
+    is.read(filecode, 4);
     if (strncmp(filecode, "DDS ", 4) != 0) {
-        fclose(fp);
         return false;
     }
 
     // read in DDS header
     DDS_HEADER ddsh;
-    fread(&ddsh, sizeof(DDS_HEADER), 1, fp);
+    is.read((char*)&ddsh, sizeof(DDS_HEADER));
 
     swap_endian(&ddsh.dwSize);
     swap_endian(&ddsh.dwFlags);
@@ -321,7 +325,6 @@ bool CDDSImage::load(const string& filename, bool flipImage) {
             m_components = 4;
             break;
         default:
-            fclose(fp);
             return false;
         }
     } else if (ddsh.ddspf.dwFlags == DDSF_RGBA && ddsh.ddspf.dwRGBBitCount == 32) {
@@ -337,7 +340,6 @@ bool CDDSImage::load(const string& filename, bool flipImage) {
         m_format = GL_LUMINANCE;
         m_components = 1;
     } else {
-        fclose(fp);
         return false;
     }
 
@@ -365,7 +367,7 @@ bool CDDSImage::load(const string& filename, bool flipImage) {
 
         // load surface
         uint8_t *pixels = new uint8_t[size];
-        fread(pixels, 1, size, fp);
+        is.read((char*)pixels, size);
 
         img.create(width, height, depth, size, pixels);
 
@@ -398,7 +400,7 @@ bool CDDSImage::load(const string& filename, bool flipImage) {
             size = (this->*sizefunc)(w, h) * d;
 
             uint8_t *pixels = new uint8_t[size];
-            fread(pixels, 1, size, fp);
+            is.read((char*)pixels, size);
 
             mipmap.create(w, h, d, size, pixels);
 
@@ -421,8 +423,6 @@ bool CDDSImage::load(const string& filename, bool flipImage) {
         m_images[3] = m_images[2];
         m_images[2] = tmp;
     }
-
-    fclose(fp);
 
     m_valid = true;
 
