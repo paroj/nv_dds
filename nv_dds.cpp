@@ -159,9 +159,13 @@
 #include "nv_dds.h"
 
 #include <cstring>
+#include <cassert>
 #include <fstream>
 
-#include <assert.h>
+#ifdef GL_ES_VERSION_2_0
+#define GL_BGR GL_RGB
+#define GL_BGRA GL_RGBA
+#endif
 
 using namespace std;
 using namespace nv_dds;
@@ -328,13 +332,13 @@ bool CDDSImage::load(istream& is, bool flipImage) {
             return false;
         }
     } else if (ddsh.ddspf.dwFlags == DDSF_RGBA && ddsh.ddspf.dwRGBBitCount == 32) {
-        m_format = GL_BGRA_EXT;
+        m_format = GL_BGRA;
         m_components = 4;
     } else if (ddsh.ddspf.dwFlags == DDSF_RGB && ddsh.ddspf.dwRGBBitCount == 32) {
-        m_format = GL_BGRA_EXT;
+        m_format = GL_BGRA;
         m_components = 4;
     } else if (ddsh.ddspf.dwFlags == DDSF_RGB && ddsh.ddspf.dwRGBBitCount == 24) {
-        m_format = GL_BGR_EXT;
+        m_format = GL_BGR;
         m_components = 3;
     } else if (ddsh.ddspf.dwRGBBitCount == 8) {
         m_format = GL_LUMINANCE;
@@ -559,6 +563,7 @@ void CDDSImage::clear() {
     m_images.clear();
 }
 
+#ifndef GL_ES_VERSION_2_0
 ///////////////////////////////////////////////////////////////////////////////
 // uploads a compressed/uncompressed 1D texture
 bool CDDSImage::upload_texture1D() {
@@ -600,6 +605,7 @@ bool CDDSImage::upload_texture1D() {
 
     return true;
 }
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 // uploads a compressed/uncompressed 2D texture

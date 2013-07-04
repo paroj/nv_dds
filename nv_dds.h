@@ -7,7 +7,7 @@
 #include <assert.h>
 #include <stdint.h>
 
-#if defined(MACOS)
+#ifdef __APPLE__
 #include <OpenGL/gl.h>
 #include <OpenGL/glext.h>
 #else
