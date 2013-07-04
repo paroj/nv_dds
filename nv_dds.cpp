@@ -167,16 +167,14 @@
 #endif
 
 #ifdef MACOS
-#include <OpenGL/gl.h>
-#include <OpenGL/glext.h>
 #define GL_TEXTURE_RECTANGLE_NV GL_TEXTURE_RECTANGLE_EXT
-#else
-#include <GL/gl.h>
-#include <GL/glext.h>
 #endif
+
+#include <cstring>
 
 #include <stdio.h>
 #include <assert.h>
+
 #include "nv_dds.h"
 
 using namespace std;
@@ -390,7 +388,7 @@ bool CDDSImage::load(string filename, bool flipImage) {
         unsigned int size = (this->*sizefunc)(width, height) * depth;
 
         // load surface
-        unsigned char *pixels = new unsigned char[size];
+        uint8_t *pixels = new uint8_t[size];
         fread(pixels, 1, size, fp);
 
         img.create(width, height, depth, size, pixels);
@@ -423,7 +421,7 @@ bool CDDSImage::load(string filename, bool flipImage) {
             // calculate mipmap size
             size = (this->*sizefunc)(w, h) * d;
 
-            unsigned char *pixels = new unsigned char[size];
+            uint8_t *pixels = new uint8_t[size];
             fread(pixels, 1, size, fp);
 
             mipmap.create(w, h, d, size, pixels);
@@ -844,8 +842,8 @@ void CDDSImage::flip(CSurface &surface) {
 
         for (unsigned int n = 0; n < surface.get_depth(); n++) {
             offset = imagesize * n;
-            unsigned char *top = (unsigned char*) surface + offset;
-            unsigned char *bottom = top + (imagesize - linesize);
+            uint8_t *top = (uint8_t*) surface + offset;
+            uint8_t *bottom = top + (imagesize - linesize);
 
             for (unsigned int i = 0; i < (surface.get_height() >> 1); i++) {
                 swap(bottom, top, linesize);
@@ -883,8 +881,8 @@ void CDDSImage::flip(CSurface &surface) {
         DXTColBlock *bottom;
 
         for (unsigned int j = 0; j < (yblocks >> 1); j++) {
-            top = (DXTColBlock*) ((unsigned char*) surface + j * linesize);
-            bottom = (DXTColBlock*) ((unsigned char*) surface + (((yblocks - j) - 1) * linesize));
+            top = (DXTColBlock*) ((uint8_t*) surface + j * linesize);
+            bottom = (DXTColBlock*) ((uint8_t*) surface + (((yblocks - j) - 1) * linesize));
 
             (this->*flipblocks)(top, xblocks);
             (this->*flipblocks)(bottom, xblocks);
@@ -905,7 +903,7 @@ void CDDSImage::flip_texture(CTexture &texture) {
 ///////////////////////////////////////////////////////////////////////////////
 // swap to sections of memory
 void CDDSImage::swap(void *byte1, void *byte2, unsigned int size) {
-    unsigned char *tmp = new unsigned char[size];
+    uint8_t *tmp = new uint8_t[size];
 
     memcpy(tmp, byte1, size);
     memcpy(byte1, byte2, size);
@@ -920,8 +918,8 @@ void CDDSImage::flip_blocks_dxtc1(DXTColBlock *line, unsigned int numBlocks) {
     DXTColBlock *curblock = line;
 
     for (unsigned int i = 0; i < numBlocks; i++) {
-        swap(&curblock->row[0], &curblock->row[3], sizeof(unsigned char));
-        swap(&curblock->row[1], &curblock->row[2], sizeof(unsigned char));
+        swap(&curblock->row[0], &curblock->row[3], sizeof(uint8_t));
+        swap(&curblock->row[1], &curblock->row[2], sizeof(uint8_t));
 
         curblock++;
     }
@@ -936,13 +934,13 @@ void CDDSImage::flip_blocks_dxtc3(DXTColBlock *line, unsigned int numBlocks) {
     for (unsigned int i = 0; i < numBlocks; i++) {
         alphablock = (DXT3AlphaBlock*) curblock;
 
-        swap(&alphablock->row[0], &alphablock->row[3], sizeof(unsigned short));
-        swap(&alphablock->row[1], &alphablock->row[2], sizeof(unsigned short));
+        swap(&alphablock->row[0], &alphablock->row[3], sizeof(uint16_t));
+        swap(&alphablock->row[1], &alphablock->row[2], sizeof(uint16_t));
 
         curblock++;
 
-        swap(&curblock->row[0], &curblock->row[3], sizeof(unsigned char));
-        swap(&curblock->row[1], &curblock->row[2], sizeof(unsigned char));
+        swap(&curblock->row[0], &curblock->row[3], sizeof(uint8_t));
+        swap(&curblock->row[1], &curblock->row[2], sizeof(uint8_t));
 
         curblock++;
     }
@@ -951,48 +949,48 @@ void CDDSImage::flip_blocks_dxtc3(DXTColBlock *line, unsigned int numBlocks) {
 ///////////////////////////////////////////////////////////////////////////////
 // flip a DXT5 alpha block
 void CDDSImage::flip_dxt5_alpha(DXT5AlphaBlock *block) {
-    unsigned char gBits[4][4];
+    uint8_t gBits[4][4];
 
-    const unsigned long mask = 0x00000007;          // bits = 00 00 01 11
-    unsigned long bits = 0;
-    memcpy(&bits, &block->row[0], sizeof(unsigned char) * 3);
+    const uint32_t mask = 0x00000007;          // bits = 00 00 01 11
+    uint32_t bits = 0;
+    memcpy(&bits, &block->row[0], sizeof(uint8_t) * 3);
 
-    gBits[0][0] = (unsigned char) (bits & mask);
+    gBits[0][0] = (uint8_t) (bits & mask);
     bits >>= 3;
-    gBits[0][1] = (unsigned char) (bits & mask);
+    gBits[0][1] = (uint8_t) (bits & mask);
     bits >>= 3;
-    gBits[0][2] = (unsigned char) (bits & mask);
+    gBits[0][2] = (uint8_t) (bits & mask);
     bits >>= 3;
-    gBits[0][3] = (unsigned char) (bits & mask);
+    gBits[0][3] = (uint8_t) (bits & mask);
     bits >>= 3;
-    gBits[1][0] = (unsigned char) (bits & mask);
+    gBits[1][0] = (uint8_t) (bits & mask);
     bits >>= 3;
-    gBits[1][1] = (unsigned char) (bits & mask);
+    gBits[1][1] = (uint8_t) (bits & mask);
     bits >>= 3;
-    gBits[1][2] = (unsigned char) (bits & mask);
+    gBits[1][2] = (uint8_t) (bits & mask);
     bits >>= 3;
-    gBits[1][3] = (unsigned char) (bits & mask);
+    gBits[1][3] = (uint8_t) (bits & mask);
 
     bits = 0;
-    memcpy(&bits, &block->row[3], sizeof(unsigned char) * 3);
+    memcpy(&bits, &block->row[3], sizeof(uint8_t) * 3);
 
-    gBits[2][0] = (unsigned char) (bits & mask);
+    gBits[2][0] = (uint8_t) (bits & mask);
     bits >>= 3;
-    gBits[2][1] = (unsigned char) (bits & mask);
+    gBits[2][1] = (uint8_t) (bits & mask);
     bits >>= 3;
-    gBits[2][2] = (unsigned char) (bits & mask);
+    gBits[2][2] = (uint8_t) (bits & mask);
     bits >>= 3;
-    gBits[2][3] = (unsigned char) (bits & mask);
+    gBits[2][3] = (uint8_t) (bits & mask);
     bits >>= 3;
-    gBits[3][0] = (unsigned char) (bits & mask);
+    gBits[3][0] = (uint8_t) (bits & mask);
     bits >>= 3;
-    gBits[3][1] = (unsigned char) (bits & mask);
+    gBits[3][1] = (uint8_t) (bits & mask);
     bits >>= 3;
-    gBits[3][2] = (unsigned char) (bits & mask);
+    gBits[3][2] = (uint8_t) (bits & mask);
     bits >>= 3;
-    gBits[3][3] = (unsigned char) (bits & mask);
+    gBits[3][3] = (uint8_t) (bits & mask);
 
-    unsigned long *pBits = ((unsigned long*) &(block->row[0]));
+    uint32_t *pBits = ((uint32_t*) &(block->row[0]));
 
     *pBits = *pBits | (gBits[3][0] << 0);
     *pBits = *pBits | (gBits[3][1] << 3);
@@ -1004,7 +1002,7 @@ void CDDSImage::flip_dxt5_alpha(DXT5AlphaBlock *block) {
     *pBits = *pBits | (gBits[2][2] << 18);
     *pBits = *pBits | (gBits[2][3] << 21);
 
-    pBits = ((unsigned long*) &(block->row[3]));
+    pBits = ((uint32_t*) &(block->row[3]));
 
 #ifdef MACOS
     *pBits &= 0x000000ff;
@@ -1036,8 +1034,8 @@ void CDDSImage::flip_blocks_dxtc5(DXTColBlock *line, unsigned int numBlocks) {
 
         curblock++;
 
-        swap(&curblock->row[0], &curblock->row[3], sizeof(unsigned char));
-        swap(&curblock->row[1], &curblock->row[2], sizeof(unsigned char));
+        swap(&curblock->row[0], &curblock->row[3], sizeof(uint8_t));
+        swap(&curblock->row[1], &curblock->row[2], sizeof(uint8_t));
 
         curblock++;
     }
@@ -1056,7 +1054,7 @@ CTexture::CTexture() :
 
 ///////////////////////////////////////////////////////////////////////////////
 // creates an empty texture
-CTexture::CTexture(unsigned int w, unsigned int h, unsigned int d, unsigned int imgsize, const unsigned char *pixels) :
+CTexture::CTexture(unsigned int w, unsigned int h, unsigned int d, unsigned int imgsize, const uint8_t *pixels) :
         CSurface(w, h, d, imgsize, pixels)  // initialize base class part
 {
 }
@@ -1086,7 +1084,7 @@ CTexture &CTexture::operator=(const CTexture &rhs) {
     return *this;
 }
 
-void CTexture::create(unsigned int w, unsigned int h, unsigned int d, unsigned int imgsize, const unsigned char *pixels) {
+void CTexture::create(unsigned int w, unsigned int h, unsigned int d, unsigned int imgsize, const uint8_t *pixels) {
     CSurface::create(w, h, d, imgsize, pixels);
 
     m_mipmaps.clear();
@@ -1110,7 +1108,7 @@ CSurface::CSurface() :
 
 ///////////////////////////////////////////////////////////////////////////////
 // creates an empty image
-CSurface::CSurface(unsigned int w, unsigned int h, unsigned int d, unsigned int imgsize, const unsigned char *pixels) :
+CSurface::CSurface(unsigned int w, unsigned int h, unsigned int d, unsigned int imgsize, const uint8_t *pixels) :
         m_width(0), m_height(0), m_depth(0), m_size(0), m_pixels(NULL) {
     create(w, h, d, imgsize, pixels);
 }
@@ -1125,7 +1123,7 @@ CSurface::CSurface(const CSurface &copy) :
         m_height = copy.get_height();
         m_depth = copy.get_depth();
 
-        m_pixels = new unsigned char[m_size];
+        m_pixels = new uint8_t[m_size];
         memcpy(m_pixels, copy, m_size);
     }
 }
@@ -1142,7 +1140,7 @@ CSurface &CSurface::operator=(const CSurface &rhs) {
             m_height = rhs.get_height();
             m_depth = rhs.get_depth();
 
-            m_pixels = new unsigned char[m_size];
+            m_pixels = new uint8_t[m_size];
             memcpy(m_pixels, rhs, m_size);
         }
     }
@@ -1158,13 +1156,13 @@ CSurface::~CSurface() {
 
 ///////////////////////////////////////////////////////////////////////////////
 // returns a pointer to image
-CSurface::operator unsigned char*() const {
+CSurface::operator uint8_t*() const {
     return m_pixels;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 // creates an empty image
-void CSurface::create(unsigned int w, unsigned int h, unsigned int d, unsigned int imgsize, const unsigned char *pixels) {
+void CSurface::create(unsigned int w, unsigned int h, unsigned int d, unsigned int imgsize, const uint8_t *pixels) {
     assert(w != 0);
     assert(h != 0);
     assert(d != 0);
@@ -1177,7 +1175,7 @@ void CSurface::create(unsigned int w, unsigned int h, unsigned int d, unsigned i
     m_height = h;
     m_depth = d;
     m_size = imgsize;
-    m_pixels = new unsigned char[imgsize];
+    m_pixels = new uint8_t[imgsize];
     memcpy(m_pixels, pixels, imgsize);
 }
 
