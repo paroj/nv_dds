@@ -659,6 +659,7 @@ bool CDDSImage::upload_texture2D(unsigned int imageIndex, GLenum target) {
     return true;
 }
 
+#if !defined(GL_ES_VERSION_2_0) && !defined(GL_ES_VERSION_3_0)
 ///////////////////////////////////////////////////////////////////////////////
 // uploads a compressed/uncompressed 3D texture
 bool CDDSImage::upload_texture3D() {
@@ -705,6 +706,7 @@ bool CDDSImage::upload_texture3D() {
 
     return true;
 }
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 // uploads a compressed/uncompressed cubemap texture
