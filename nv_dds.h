@@ -115,16 +115,16 @@ public:
     virtual void create(unsigned int w, unsigned int h, unsigned int d, unsigned int imgsize, const uint8_t *pixels);
     virtual void clear();
 
-    inline unsigned int get_width() const {
+    unsigned int get_width() const {
         return m_width;
     }
-    inline unsigned int get_height() const {
+    unsigned int get_height() const {
         return m_height;
     }
-    inline unsigned int get_depth() const {
+    unsigned int get_depth() const {
         return m_depth;
     }
-    inline unsigned int get_size() const {
+    unsigned int get_size() const {
         return m_size;
     }
 
@@ -150,23 +150,23 @@ public:
     void create(unsigned int w, unsigned int h, unsigned int d, unsigned int imgsize, const uint8_t *pixels);
     void clear();
 
-    inline const CSurface &get_mipmap(unsigned int index) const {
+    const CSurface &get_mipmap(unsigned int index) const {
         assert(!m_mipmaps.empty());
         assert(index < m_mipmaps.size());
 
         return m_mipmaps[index];
     }
 
-    inline void add_mipmap(const CSurface &mipmap) {
+    void add_mipmap(const CSurface &mipmap) {
         m_mipmaps.push_back(mipmap);
     }
 
-    inline unsigned int get_num_mipmaps() const {
+    unsigned int get_num_mipmaps() const {
         return (unsigned int) m_mipmaps.size();
     }
 
 protected:
-    inline CSurface &get_mipmap(unsigned int index) {
+    CSurface &get_mipmap(unsigned int index) {
         assert(!m_mipmaps.empty());
         assert(index < m_mipmaps.size());
 
@@ -197,49 +197,49 @@ public:
     bool upload_textureRectangle();
     bool upload_textureCubemap();
 
-    inline operator uint8_t*() {
+    operator uint8_t*() {
         assert(m_valid);
         assert(!m_images.empty());
 
         return m_images[0];
     }
 
-    inline unsigned int get_width() {
+    unsigned int get_width() {
         assert(m_valid);
         assert(!m_images.empty());
 
         return m_images[0].get_width();
     }
 
-    inline unsigned int get_height() {
+    unsigned int get_height() {
         assert(m_valid);
         assert(!m_images.empty());
 
         return m_images[0].get_height();
     }
 
-    inline unsigned int get_depth() {
+    unsigned int get_depth() {
         assert(m_valid);
         assert(!m_images.empty());
 
         return m_images[0].get_depth();
     }
 
-    inline unsigned int get_size() {
+    unsigned int get_size() {
         assert(m_valid);
         assert(!m_images.empty());
 
         return m_images[0].get_size();
     }
 
-    inline unsigned int get_num_mipmaps() {
+    unsigned int get_num_mipmaps() {
         assert(m_valid);
         assert(!m_images.empty());
 
         return m_images[0].get_num_mipmaps();
     }
 
-    inline const CSurface &get_mipmap(unsigned int index) const {
+    const CSurface &get_mipmap(unsigned int index) const {
         assert(m_valid);
         assert(!m_images.empty());
         assert(index < m_images[0].get_num_mipmaps());
@@ -247,7 +247,7 @@ public:
         return m_images[0].get_mipmap(index);
     }
 
-    inline const CTexture &get_cubemap_face(unsigned int face) const {
+    const CTexture &get_cubemap_face(unsigned int face) const {
         assert(m_valid);
         assert(!m_images.empty());
         assert(m_images.size() == 6);
@@ -257,34 +257,34 @@ public:
         return m_images[face];
     }
 
-    inline unsigned int get_components() {
+    unsigned int get_components() {
         return m_components;
     }
-    inline unsigned int get_format() {
+    unsigned int get_format() {
         return m_format;
     }
-    inline TextureType get_type() {
+    TextureType get_type() {
         return m_type;
     }
 
-    inline bool is_compressed() {
+    bool is_compressed() {
         if ((m_format == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT) || (m_format == GL_COMPRESSED_RGBA_S3TC_DXT3_EXT) || (m_format == GL_COMPRESSED_RGBA_S3TC_DXT5_EXT))
             return true;
         else
             return false;
     }
 
-    inline bool is_cubemap() {
+    bool is_cubemap() {
         return (m_type == TextureCubemap);
     }
-    inline bool is_volume() {
+    bool is_volume() {
         return (m_type == Texture3D);
     }
-    inline bool is_valid() {
+    bool is_valid() {
         return m_valid;
     }
 
-    inline bool is_dword_aligned() {
+    bool is_dword_aligned() {
         assert(m_valid);
 
         int dwordLineSize = get_dword_aligned_linesize(get_width(), m_components * 8);
@@ -297,10 +297,10 @@ private:
     unsigned int clamp_size(unsigned int size);
     unsigned int size_dxtc(unsigned int width, unsigned int height);
     unsigned int size_rgb(unsigned int width, unsigned int height);
-    inline void swap_endian(void *val);
+    void swap_endian(void *val);
 
     // calculates 4-byte aligned width of image
-    inline unsigned int get_dword_aligned_linesize(unsigned int width, unsigned int bpp) {
+    unsigned int get_dword_aligned_linesize(unsigned int width, unsigned int bpp) {
         return ((width * bpp + 31) & -32) >> 3;
     }
 
