@@ -107,12 +107,12 @@
 // image.load("cubemap.dds");
 // 
 // glGenTextures(1, &texobj);
-// glEnable(GL_TEXTURE_CUBE_MAP_ARB);
-// glBindTexture(GL_TEXTURE_CUBE_MAP_ARB, texobj);
+// glEnable(GL_TEXTURE_CUBE_MAP);
+// glBindTexture(GL_TEXTURE_CUBE_MAP, texobj);
 // 
 // for (int n = 0; n < 6; n++)
 // {
-//     target = GL_TEXTURE_CUBE_MAP_POSITIVE_X_ARB+n;
+//     target = GL_TEXTURE_CUBE_MAP_POSITIVE_X+n;
 // 
 //     glTexImage2D(target, 0, image.get_components(), image[n].get_width(), 
 //         image[n].get_height(), 0, image.get_format(), GL_UNSIGNED_BYTE, 
@@ -154,22 +154,6 @@
 //         GL_UNSIGNED_BYTE, image[0].get_mipmap(i));
 // }
 
-#if defined(WIN32)
-#  include <windows.h>
-#  define GET_EXT_POINTER(name, type) \
-      name = (type)wglGetProcAddress(#name)
-#elif defined(UNIX)
-#  include <GL/glx.h>
-#  define GET_EXT_POINTER(name, type) \
-      name = (type)glXGetProcAddressARB((const GLubyte*)#name)
-#else
-#  define GET_EXT_POINTER(name, type)
-#endif
-
-#ifdef MACOS
-#define GL_TEXTURE_RECTANGLE_NV GL_TEXTURE_RECTANGLE_EXT
-#endif
-
 #include <GL/glew.h>
 
 #include "nv_dds.h"
@@ -178,7 +162,6 @@
 #include <cstdio>
 
 #include <assert.h>
-
 
 using namespace std;
 using namespace nv_dds;
@@ -275,7 +258,7 @@ void CDDSImage::create_textureCubemap(unsigned int format, unsigned int componen
 //
 // filename - fully qualified name of DDS image
 // flipImage - specifies whether image is flipped on load, default is true
-bool CDDSImage::load(string filename, bool flipImage) {
+bool CDDSImage::load(const string& filename, bool flipImage) {
     assert(filename.length() != 0);
 
     // clear any previously loaded images
@@ -457,7 +440,7 @@ void CDDSImage::write_texture(const CTexture &texture, FILE *fp) {
     }
 }
 
-bool CDDSImage::save(std::string filename, bool flipImage) {
+bool CDDSImage::save(const std::string& filename, bool flipImage) {
     assert(m_valid);
     assert(m_type != TextureNone);
 
@@ -642,7 +625,7 @@ bool CDDSImage::upload_texture2D(unsigned int imageIndex, GLenum target) {
     assert(image.get_height() > 0);
     assert(image.get_width() > 0);
     assert(
-            target == GL_TEXTURE_2D || target == GL_TEXTURE_RECTANGLE_NV || (target >= GL_TEXTURE_CUBE_MAP_POSITIVE_X_ARB && target <= GL_TEXTURE_CUBE_MAP_NEGATIVE_Z_ARB));
+            target == GL_TEXTURE_2D || (target >= GL_TEXTURE_CUBE_MAP_POSITIVE_X && target <= GL_TEXTURE_CUBE_MAP_NEGATIVE_Z));
 
     if (is_compressed()) {
         glCompressedTexImage2D(target, 0, m_format, image.get_width(), image.get_height(), 0, image.get_size(), image);
@@ -699,14 +682,6 @@ bool CDDSImage::upload_texture3D() {
                     mipmap);
         }
     } else {
-        // retrieve function pointer if needed
-        if (glTexImage3D == NULL) {
-            GET_EXT_POINTER(glTexImage3D, PFNGLTEXIMAGE3DEXTPROC);
-        }
-
-        if (glTexImage3D == NULL)
-            return false;
-
         GLint alignment = -1;
         if (!is_dword_aligned()) {
             glGetIntegerv(GL_UNPACK_ALIGNMENT, &alignment);
@@ -731,10 +706,6 @@ bool CDDSImage::upload_texture3D() {
     return true;
 }
 
-bool CDDSImage::upload_textureRectangle() {
-    return upload_texture2D(0, GL_TEXTURE_RECTANGLE_NV);
-}
-
 ///////////////////////////////////////////////////////////////////////////////
 // uploads a compressed/uncompressed cubemap texture
 bool CDDSImage::upload_textureCubemap() {
@@ -748,7 +719,7 @@ bool CDDSImage::upload_textureCubemap() {
     // loop through cubemap faces and load them as 2D textures 
     for (unsigned int n = 0; n < 6; n++) {
         // specify cubemap face
-        target = GL_TEXTURE_CUBE_MAP_POSITIVE_X_ARB + n;
+        target = GL_TEXTURE_CUBE_MAP_POSITIVE_X + n;
         if (!upload_texture2D(n, target))
             return false;
     }

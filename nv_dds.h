@@ -14,6 +14,11 @@
 #include <GL/glext.h>
 #endif
 
+#define GL_COMPRESSED_RGB_S3TC_DXT1_EXT                   0x83F0
+#define GL_COMPRESSED_RGBA_S3TC_DXT1_EXT                  0x83F1
+#define GL_COMPRESSED_RGBA_S3TC_DXT3_EXT                  0x83F2
+#define GL_COMPRESSED_RGBA_S3TC_DXT5_EXT                  0x83F3
+
 namespace nv_dds {
 // surface description flags
 const uint32_t DDSF_CAPS = 0x00000001;
@@ -97,7 +102,7 @@ struct DDS_HEADER {
 };
 
 enum TextureType {
-    TextureNone, TextureFlat,    // 1D, 2D, and rectangle textures
+    TextureNone, TextureFlat,    // 1D, 2D textures
     Texture3D,
     TextureCubemap
 };
@@ -188,13 +193,12 @@ public:
             const CTexture &negativeY, const CTexture &positiveZ, const CTexture &negativeZ);
 
     void clear();
-    bool load(std::string filename, bool flipImage = true);
-    bool save(std::string filename, bool flipImage = true);
+    bool load(const std::string& filename, bool flipImage = true);
+    bool save(const std::string& filename, bool flipImage = true);
 
     bool upload_texture1D();
     bool upload_texture2D(unsigned int imageIndex = 0, GLenum target = GL_TEXTURE_2D);
     bool upload_texture3D();
-    bool upload_textureRectangle();
     bool upload_textureCubemap();
 
     operator uint8_t*() {
@@ -268,10 +272,9 @@ public:
     }
 
     bool is_compressed() {
-        if ((m_format == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT) || (m_format == GL_COMPRESSED_RGBA_S3TC_DXT3_EXT) || (m_format == GL_COMPRESSED_RGBA_S3TC_DXT5_EXT))
-            return true;
-        else
-            return false;
+        return (m_format == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT)
+                || (m_format == GL_COMPRESSED_RGBA_S3TC_DXT3_EXT)
+                || (m_format == GL_COMPRESSED_RGBA_S3TC_DXT5_EXT);
     }
 
     bool is_cubemap() {
