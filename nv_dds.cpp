@@ -170,25 +170,18 @@
 #define GL_TEXTURE_RECTANGLE_NV GL_TEXTURE_RECTANGLE_EXT
 #endif
 
-#include <cstring>
-
-#include <stdio.h>
-#include <assert.h>
+#include <GL/glew.h>
 
 #include "nv_dds.h"
 
+#include <cstring>
+#include <cstdio>
+
+#include <assert.h>
+
+
 using namespace std;
 using namespace nv_dds;
-
-///////////////////////////////////////////////////////////////////////////////
-// static function pointers for uploading 3D textures and compressed 1D, 2D
-// and 3D textures.
-#ifndef MACOS
-PFNGLTEXIMAGE3DEXTPROC CDDSImage::glTexImage3D = NULL;
-PFNGLCOMPRESSEDTEXIMAGE1DARBPROC CDDSImage::glCompressedTexImage1DARB = NULL;
-PFNGLCOMPRESSEDTEXIMAGE2DARBPROC CDDSImage::glCompressedTexImage2DARB = NULL;
-PFNGLCOMPRESSEDTEXIMAGE3DARBPROC CDDSImage::glCompressedTexImage3DARB = NULL;
-#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 // CDDSImage public functions
@@ -595,21 +588,12 @@ bool CDDSImage::upload_texture1D() {
     assert(baseImage.get_width() > 0);
 
     if (is_compressed()) {
-        // get function pointer if needed
-        if (glCompressedTexImage1DARB == NULL) {
-            GET_EXT_POINTER(glCompressedTexImage1DARB,
-                    PFNGLCOMPRESSEDTEXIMAGE1DARBPROC);
-        }
-
-        if (glCompressedTexImage1DARB == NULL)
-            return false;
-
-        glCompressedTexImage1DARB(GL_TEXTURE_1D, 0, m_format, baseImage.get_width(), 0, baseImage.get_size(), baseImage);
+        glCompressedTexImage1D(GL_TEXTURE_1D, 0, m_format, baseImage.get_width(), 0, baseImage.get_size(), baseImage);
 
         // load all mipmaps
         for (unsigned int i = 0; i < baseImage.get_num_mipmaps(); i++) {
             const CSurface &mipmap = baseImage.get_mipmap(i);
-            glCompressedTexImage1DARB(GL_TEXTURE_1D, i + 1, m_format, mipmap.get_width(), 0, mipmap.get_size(), mipmap);
+            glCompressedTexImage1D(GL_TEXTURE_1D, i + 1, m_format, mipmap.get_width(), 0, mipmap.get_size(), mipmap);
         }
     } else {
         GLint alignment = -1;
@@ -661,22 +645,13 @@ bool CDDSImage::upload_texture2D(unsigned int imageIndex, GLenum target) {
             target == GL_TEXTURE_2D || target == GL_TEXTURE_RECTANGLE_NV || (target >= GL_TEXTURE_CUBE_MAP_POSITIVE_X_ARB && target <= GL_TEXTURE_CUBE_MAP_NEGATIVE_Z_ARB));
 
     if (is_compressed()) {
-        // load function pointer if needed
-        if (glCompressedTexImage2DARB == NULL) {
-            GET_EXT_POINTER(glCompressedTexImage2DARB,
-                    PFNGLCOMPRESSEDTEXIMAGE2DARBPROC);
-        }
-
-        if (glCompressedTexImage2DARB == NULL)
-            return false;
-
-        glCompressedTexImage2DARB(target, 0, m_format, image.get_width(), image.get_height(), 0, image.get_size(), image);
+        glCompressedTexImage2D(target, 0, m_format, image.get_width(), image.get_height(), 0, image.get_size(), image);
 
         // load all mipmaps
         for (unsigned int i = 0; i < image.get_num_mipmaps(); i++) {
             const CSurface &mipmap = image.get_mipmap(i);
 
-            glCompressedTexImage2DARB(target, i + 1, m_format, mipmap.get_width(), mipmap.get_height(), 0, mipmap.get_size(), mipmap);
+            glCompressedTexImage2D(target, i + 1, m_format, mipmap.get_width(), mipmap.get_height(), 0, mipmap.get_size(), mipmap);
         }
     } else {
         GLint alignment = -1;
@@ -713,23 +688,14 @@ bool CDDSImage::upload_texture3D() {
     assert(baseImage.get_depth() >= 1);
 
     if (is_compressed()) {
-        // retrieve function pointer if needed
-        if (glCompressedTexImage3DARB == NULL) {
-            GET_EXT_POINTER(glCompressedTexImage3DARB,
-                    PFNGLCOMPRESSEDTEXIMAGE3DARBPROC);
-        }
-
-        if (glCompressedTexImage3DARB == NULL)
-            return false;
-
-        glCompressedTexImage3DARB(GL_TEXTURE_3D, 0, m_format, baseImage.get_width(), baseImage.get_height(), baseImage.get_depth(), 0, baseImage.get_size(),
+        glCompressedTexImage3D(GL_TEXTURE_3D, 0, m_format, baseImage.get_width(), baseImage.get_height(), baseImage.get_depth(), 0, baseImage.get_size(),
                 baseImage);
 
         // load all mipmap volumes
         for (unsigned int i = 0; i < baseImage.get_num_mipmaps(); i++) {
             const CSurface &mipmap = baseImage.get_mipmap(i);
 
-            glCompressedTexImage3DARB(GL_TEXTURE_3D, i + 1, m_format, mipmap.get_width(), mipmap.get_height(), mipmap.get_depth(), 0, mipmap.get_size(),
+            glCompressedTexImage3D(GL_TEXTURE_3D, i + 1, m_format, mipmap.get_width(), mipmap.get_height(), mipmap.get_depth(), 0, mipmap.get_size(),
                     mipmap);
         }
     } else {
