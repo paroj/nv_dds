@@ -1,20 +1,4 @@
-#ifndef __NV_DDS_H__
-#define __NV_DDS_H__
-
-#ifndef NVDDS_PROJECT //defined if building nv_dds library
-#if _MSC_VER >= 1300
-#ifdef _DLL
-#pragma message("Note: including lib: nv_dds.lib\n")
-#pragma comment(lib, "nv_dds.lib")
-#else
-#error "Your project doesn't use the Multithreaded DLL Runtime"
-#endif
-#endif
-#endif
-
-#if defined(WIN32)
-#  include <windows.h>
-#endif
+#pragma once
 
 #include <string>
 #include <deque>
@@ -344,4 +328,3 @@ private:
 #endif
 };
 }
-#endif
