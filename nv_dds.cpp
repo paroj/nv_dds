@@ -168,13 +168,10 @@
 #include <fstream>
 #include <stdexcept>
 
-#ifdef GL_ES_VERSION_2_0
-#define GL_BGR GL_RGB
-#define GL_BGRA GL_RGBA
-#endif
-
 using namespace std;
 using namespace nv_dds;
+
+#define GL_BGR_EXT                 0x80E0
 
 ///////////////////////////////////////////////////////////////////////////////
 // CDDSImage private functions
@@ -414,14 +411,31 @@ void CDDSImage::load(istream& is, bool flipImage) {
         default:
             throw runtime_error("unknown texture compression '"+fourcc(ddsh.ddspf.dwFourCC)+"'");
         }
-    } else if (ddsh.ddspf.dwFlags == DDSF_RGBA && ddsh.ddspf.dwRGBBitCount == 32) {
-        m_format = GL_BGRA;
+    } else if (ddsh.ddspf.dwRGBBitCount == 32 &&
+               ddsh.ddspf.dwRBitMask == 0x00FF0000 &&
+               ddsh.ddspf.dwGBitMask == 0x0000FF00 &&
+               ddsh.ddspf.dwBBitMask == 0x000000FF &&
+               ddsh.ddspf.dwABitMask == 0xFF000000) {
+        m_format = GL_BGRA_EXT;
         m_components = 4;
-    } else if (ddsh.ddspf.dwFlags == DDSF_RGB && ddsh.ddspf.dwRGBBitCount == 32) {
-        m_format = GL_BGRA;
+    } else if (ddsh.ddspf.dwRGBBitCount == 32 &&
+               ddsh.ddspf.dwRBitMask == 0x000000FF &&
+               ddsh.ddspf.dwGBitMask == 0x0000FF00 &&
+               ddsh.ddspf.dwBBitMask == 0x00FF0000 &&
+               ddsh.ddspf.dwABitMask == 0xFF000000) {
+        m_format = GL_RGBA;
         m_components = 4;
-    } else if (ddsh.ddspf.dwFlags == DDSF_RGB && ddsh.ddspf.dwRGBBitCount == 24) {
-        m_format = GL_BGR;
+    } else if (ddsh.ddspf.dwRGBBitCount == 24 &&
+               ddsh.ddspf.dwRBitMask == 0x000000FF &&
+               ddsh.ddspf.dwGBitMask == 0x0000FF00 &&
+               ddsh.ddspf.dwBBitMask == 0x00FF0000) {
+        m_format = GL_RGB;
+        m_components = 3;
+    } else if (ddsh.ddspf.dwRGBBitCount == 24 &&
+               ddsh.ddspf.dwRBitMask == 0x00FF0000 &&
+               ddsh.ddspf.dwGBitMask == 0x0000FF00 &&
+               ddsh.ddspf.dwBBitMask == 0x000000FF) {
+        m_format = GL_BGR_EXT;
         m_components = 3;
     } else if (ddsh.ddspf.dwRGBBitCount == 8) {
         m_format = GL_LUMINANCE;
