@@ -796,18 +796,25 @@ void CDDSImage::flip(CSurface &surface) {
         unsigned int imagesize = surface.get_size() / surface.get_depth();
         linesize = imagesize / surface.get_height();
 
+        uint8_t *tmp = new uint8_t[linesize];
+
         for (unsigned int n = 0; n < surface.get_depth(); n++) {
             offset = imagesize * n;
             uint8_t *top = (uint8_t*) surface + offset;
             uint8_t *bottom = top + (imagesize - linesize);
 
             for (unsigned int i = 0; i < (surface.get_height() >> 1); i++) {
-                swap(bottom, top, linesize);
+                // swap
+                memcpy(tmp, bottom, linesize);
+                memcpy(bottom, top, linesize);
+                memcpy(top, tmp, linesize);
 
                 top += linesize;
                 bottom -= linesize;
             }
         }
+
+        delete[] tmp;
     } else {
         void (CDDSImage::*flipblocks)(DXTColBlock*, unsigned int);
         unsigned int xblocks = surface.get_width() / 4;
@@ -836,6 +843,8 @@ void CDDSImage::flip(CSurface &surface) {
         DXTColBlock *top;
         DXTColBlock *bottom;
 
+        uint8_t *tmp = new uint8_t[linesize];
+
         for (unsigned int j = 0; j < (yblocks >> 1); j++) {
             top = (DXTColBlock*) ((uint8_t*) surface + j * linesize);
             bottom = (DXTColBlock*) ((uint8_t*) surface + (((yblocks - j) - 1) * linesize));
@@ -843,8 +852,13 @@ void CDDSImage::flip(CSurface &surface) {
             (this->*flipblocks)(top, xblocks);
             (this->*flipblocks)(bottom, xblocks);
 
-            swap(bottom, top, linesize);
+            // swap
+            memcpy(tmp, bottom, linesize);
+            memcpy(bottom, top, linesize);
+            memcpy(top, tmp, linesize);
         }
+
+        delete[] tmp;
     }
 }
 
@@ -857,25 +871,13 @@ void CDDSImage::flip_texture(CTexture &texture) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// swap to sections of memory
-void CDDSImage::swap(void *byte1, void *byte2, unsigned int size) {
-    uint8_t *tmp = new uint8_t[size];
-
-    memcpy(tmp, byte1, size);
-    memcpy(byte1, byte2, size);
-    memcpy(byte2, tmp, size);
-
-    delete[] tmp;
-}
-
-///////////////////////////////////////////////////////////////////////////////
 // flip a DXT1 color block
 void CDDSImage::flip_blocks_dxtc1(DXTColBlock *line, unsigned int numBlocks) {
     DXTColBlock *curblock = line;
 
     for (unsigned int i = 0; i < numBlocks; i++) {
-        swap(&curblock->row[0], &curblock->row[3], sizeof(uint8_t));
-        swap(&curblock->row[1], &curblock->row[2], sizeof(uint8_t));
+        std::swap(curblock->row[0], curblock->row[3]);
+        std::swap(curblock->row[1], curblock->row[2]);
 
         curblock++;
     }
@@ -890,13 +892,13 @@ void CDDSImage::flip_blocks_dxtc3(DXTColBlock *line, unsigned int numBlocks) {
     for (unsigned int i = 0; i < numBlocks; i++) {
         alphablock = (DXT3AlphaBlock*) curblock;
 
-        swap(&alphablock->row[0], &alphablock->row[3], sizeof(uint16_t));
-        swap(&alphablock->row[1], &alphablock->row[2], sizeof(uint16_t));
+        std::swap(alphablock->row[0], alphablock->row[3]);
+        std::swap(alphablock->row[1], alphablock->row[2]);
 
         curblock++;
 
-        swap(&curblock->row[0], &curblock->row[3], sizeof(uint8_t));
-        swap(&curblock->row[1], &curblock->row[2], sizeof(uint8_t));
+        std::swap(curblock->row[0], curblock->row[3]);
+        std::swap(curblock->row[1], curblock->row[2]);
 
         curblock++;
     }
@@ -990,8 +992,8 @@ void CDDSImage::flip_blocks_dxtc5(DXTColBlock *line, unsigned int numBlocks) {
 
         curblock++;
 
-        swap(&curblock->row[0], &curblock->row[3], sizeof(uint8_t));
-        swap(&curblock->row[1], &curblock->row[2], sizeof(uint8_t));
+        std::swap(curblock->row[0], curblock->row[3]);
+        std::swap(curblock->row[1], curblock->row[2]);
 
         curblock++;
     }

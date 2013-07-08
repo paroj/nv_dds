@@ -320,7 +320,6 @@ private:
     void flip(CSurface &surface);
     void flip_texture(CTexture &texture);
 
-    void swap(void *byte1, void *byte2, unsigned int size);
     void flip_blocks_dxtc1(DXTColBlock *line, unsigned int numBlocks);
     void flip_blocks_dxtc3(DXTColBlock *line, unsigned int numBlocks);
     void flip_blocks_dxtc5(DXTColBlock *line, unsigned int numBlocks);
