@@ -195,9 +195,9 @@ public:
 
     void clear();
 
-    bool load(std::istream& is, bool flipImage = true);
-    bool load(const std::string& filename, bool flipImage = true);
-    bool save(const std::string& filename, bool flipImage = true);
+    void load(std::istream& is, bool flipImage = true);
+    void load(const std::string& filename, bool flipImage = true);
+    void save(const std::string& filename, bool flipImage = true);
 
 #ifndef GL_ES_VERSION_2_0
     bool upload_texture1D();
@@ -326,7 +326,7 @@ private:
     void flip_blocks_dxtc5(DXTColBlock *line, unsigned int numBlocks);
     void flip_dxt5_alpha(DXT5AlphaBlock *block);
 
-    void write_texture(const CTexture &texture, FILE *fp);
+    void write_texture(const CTexture &texture, std::ostream& os);
 
     unsigned int m_format;
     unsigned int m_components;

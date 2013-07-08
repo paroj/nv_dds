@@ -157,13 +157,16 @@
 //         GL_UNSIGNED_BYTE, image[0].get_mipmap(i));
 // }
 
+#ifndef GLES2
 #include <GL/glew.h>
+#endif
 
 #include "nv_dds.h"
 
 #include <cstring>
 #include <cassert>
 #include <fstream>
+#include <stdexcept>
 
 #ifdef GL_ES_VERSION_2_0
 #define GL_BGR GL_RGB
@@ -265,11 +268,22 @@ void CDDSImage::create_textureCubemap(unsigned int format, unsigned int componen
 //
 // filename - fully qualified name of DDS image
 // flipImage - specifies whether image is flipped on load, default is true
-bool CDDSImage::load(const string& filename, bool flipImage) {
+void CDDSImage::load(const string& filename, bool flipImage) {
     assert(!filename.empty());
 
     fstream fs(filename.c_str());
-    return load(fs, flipImage);
+    load(fs, flipImage);
+}
+
+namespace {
+    string fourcc(uint32_t enc) {
+        char c[5] = {'\0'};
+        c[0] = enc << 0 & 0xFF;
+        c[1] = enc >> 8 & 0xFF;
+        c[2] = enc >> 16 & 0xFF;
+        c[3] = enc >> 24 & 0xFF;
+        return c;
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -277,7 +291,7 @@ bool CDDSImage::load(const string& filename, bool flipImage) {
 //
 // is - istream to read the image from
 // flipImage - specifies whether image is flipped on load, default is true
-bool CDDSImage::load(istream& is, bool flipImage) {
+void CDDSImage::load(istream& is, bool flipImage) {
     // clear any previously loaded images
     clear();
 
@@ -285,7 +299,7 @@ bool CDDSImage::load(istream& is, bool flipImage) {
     char filecode[4];
     is.read(filecode, 4);
     if (strncmp(filecode, "DDS ", 4) != 0) {
-        return false;
+        throw runtime_error("not a DDS file");
     }
 
     // read in DDS header
@@ -332,7 +346,7 @@ bool CDDSImage::load(istream& is, bool flipImage) {
             m_components = 4;
             break;
         default:
-            return false;
+            throw runtime_error("unknown texture compression '"+fourcc(ddsh.ddspf.dwFourCC)+"'");
         }
     } else if (ddsh.ddspf.dwFlags == DDSF_RGBA && ddsh.ddspf.dwRGBBitCount == 32) {
         m_format = GL_BGRA;
@@ -347,7 +361,7 @@ bool CDDSImage::load(istream& is, bool flipImage) {
         m_format = GL_LUMINANCE;
         m_components = 1;
     } else {
-        return false;
+        throw runtime_error("unknow texture format");
     }
 
     // store primary surface width/height/depth
@@ -432,22 +446,20 @@ bool CDDSImage::load(istream& is, bool flipImage) {
     }
 
     m_valid = true;
-
-    return true;
 }
 
-void CDDSImage::write_texture(const CTexture &texture, FILE *fp) {
+void CDDSImage::write_texture(const CTexture &texture, ostream& os) {
     assert(get_num_mipmaps() == texture.get_num_mipmaps());
 
-    fwrite(texture, 1, texture.get_size(), fp);
+    os.write((char*)(uint8_t*)texture, texture.get_size());
 
     for (unsigned int i = 0; i < texture.get_num_mipmaps(); i++) {
         const CSurface &mipmap = texture.get_mipmap(i);
-        fwrite(mipmap, 1, mipmap.get_size(), fp);
+        os.write((char*)(uint8_t*)mipmap, mipmap.get_size());
     }
 }
 
-bool CDDSImage::save(const std::string& filename, bool flipImage) {
+void CDDSImage::save(const std::string& filename, bool flipImage) {
     assert(m_valid);
     assert(m_type != TextureNone);
 
@@ -517,21 +529,21 @@ bool CDDSImage::save(const std::string& filename, bool flipImage) {
         ddsh.dwCaps1 |= DDSF_COMPLEX | DDSF_MIPMAP;
 
     // open file
-    FILE *fp = fopen(filename.c_str(), "wb");
-    if (fp == NULL)
-        return false;
+    ofstream of;
+    of.exceptions(ios::failbit);
+    of.open(filename.c_str(), ios::binary);
 
     // write file header
-    fwrite("DDS ", 1, 4, fp);
+    of.write("DDS ", 4);
 
     // write dds header
-    fwrite(&ddsh, 1, sizeof(DDS_HEADER), fp);
+    of.write((char*)&ddsh, sizeof(DDS_HEADER));
 
     if (m_type != TextureCubemap) {
         CTexture tex = m_images[0];
         if (flipImage)
             flip_texture(tex);
-        write_texture(tex, fp);
+        write_texture(tex, of);
     } else {
         assert(m_images.size() == 6);
 
@@ -547,12 +559,9 @@ bool CDDSImage::save(const std::string& filename, bool flipImage) {
 
             if (flipImage)
                 flip_texture(cubeFace);
-            write_texture(cubeFace, fp);
+            write_texture(cubeFace, of);
         }
     }
-
-    fclose(fp);
-    return true;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -625,7 +634,6 @@ bool CDDSImage::upload_texture1D() {
 bool CDDSImage::upload_texture2D(unsigned int imageIndex, GLenum target) {
     assert(m_valid);
     assert(!m_images.empty());
-    assert(imageIndex >= 0);
     assert(imageIndex < m_images.size());
     assert(m_images[imageIndex]);
 
