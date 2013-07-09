@@ -137,16 +137,16 @@ public:
     void save(const std::string& filename, bool flipImage = true);
 
 #ifndef GL_ES_VERSION_2_0
-    bool upload_texture1D();
+    void upload_texture1D();
 #endif
 
-    bool upload_texture2D(unsigned int imageIndex = 0, GLenum target = GL_TEXTURE_2D);
+    void upload_texture2D(uint32_t imageIndex = 0, uint32_t target = GL_TEXTURE_2D);
 
 #if !defined(GL_ES_VERSION_2_0) && !defined(GL_ES_VERSION_3_0)
-    bool upload_texture3D();
+    void upload_texture3D();
 #endif
 
-    bool upload_textureCubemap();
+    void upload_textureCubemap();
 
     operator uint8_t*() {
         assert(m_valid);

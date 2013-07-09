@@ -658,7 +658,7 @@ void CDDSImage::clear() {
 #ifndef GL_ES_VERSION_2_0
 ///////////////////////////////////////////////////////////////////////////////
 // uploads a compressed/uncompressed 1D texture
-bool CDDSImage::upload_texture1D() {
+void CDDSImage::upload_texture1D() {
     assert(m_valid);
     assert(!m_images.empty());
 
@@ -694,8 +694,6 @@ bool CDDSImage::upload_texture1D() {
         if (alignment != -1)
             glPixelStorei(GL_UNPACK_ALIGNMENT, alignment);
     }
-
-    return true;
 }
 #endif
 
@@ -711,7 +709,7 @@ bool CDDSImage::upload_texture1D() {
 //              the 2D texture such as a specific face of a cubemap
 //
 //              default: GL_TEXTURE_2D
-bool CDDSImage::upload_texture2D(unsigned int imageIndex, GLenum target) {
+void CDDSImage::upload_texture2D(uint32_t imageIndex, uint32_t target) {
     assert(m_valid);
     assert(!m_images.empty());
     assert(imageIndex < m_images.size());
@@ -752,14 +750,12 @@ bool CDDSImage::upload_texture2D(unsigned int imageIndex, GLenum target) {
         if (alignment != -1)
             glPixelStorei(GL_UNPACK_ALIGNMENT, alignment);
     }
-
-    return true;
 }
 
 #if !defined(GL_ES_VERSION_2_0) && !defined(GL_ES_VERSION_3_0)
 ///////////////////////////////////////////////////////////////////////////////
 // uploads a compressed/uncompressed 3D texture
-bool CDDSImage::upload_texture3D() {
+void CDDSImage::upload_texture3D() {
     assert(m_valid);
     assert(!m_images.empty());
     assert(m_type == Texture3D);
@@ -800,14 +796,12 @@ bool CDDSImage::upload_texture3D() {
         if (alignment != -1)
             glPixelStorei(GL_UNPACK_ALIGNMENT, alignment);
     }
-
-    return true;
 }
 #endif
 
 ///////////////////////////////////////////////////////////////////////////////
 // uploads a compressed/uncompressed cubemap texture
-bool CDDSImage::upload_textureCubemap() {
+void CDDSImage::upload_textureCubemap() {
     assert(m_valid);
     assert(!m_images.empty());
     assert(m_type == TextureCubemap);
@@ -819,11 +813,8 @@ bool CDDSImage::upload_textureCubemap() {
     for (unsigned int n = 0; n < 6; n++) {
         // specify cubemap face
         target = GL_TEXTURE_CUBE_MAP_POSITIVE_X + n;
-        if (!upload_texture2D(n, target))
-            return false;
+        upload_texture2D(n, target);
     }
-
-    return true;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
