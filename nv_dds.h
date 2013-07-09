@@ -220,7 +220,6 @@ private:
     unsigned int clamp_size(unsigned int size);
     unsigned int size_dxtc(unsigned int width, unsigned int height);
     unsigned int size_rgb(unsigned int width, unsigned int height);
-    void swap_endian(void *val);
 
     // calculates 4-byte aligned width of image
     unsigned int get_dword_aligned_linesize(unsigned int width, unsigned int bpp) {

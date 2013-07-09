@@ -520,19 +520,6 @@ void CDDSImage::load(istream& is, bool flipImage) {
     DDS_HEADER ddsh;
     is.read((char*)&ddsh, sizeof(DDS_HEADER));
 
-    swap_endian(&ddsh.dwSize);
-    swap_endian(&ddsh.dwFlags);
-    swap_endian(&ddsh.dwHeight);
-    swap_endian(&ddsh.dwWidth);
-    swap_endian(&ddsh.dwPitchOrLinearSize);
-    swap_endian(&ddsh.dwMipMapCount);
-    swap_endian(&ddsh.ddspf.dwSize);
-    swap_endian(&ddsh.ddspf.dwFlags);
-    swap_endian(&ddsh.ddspf.dwFourCC);
-    swap_endian(&ddsh.ddspf.dwRGBBitCount);
-    swap_endian(&ddsh.dwCaps1);
-    swap_endian(&ddsh.dwCaps2);
-
     // default to flat texture type (1D, 2D, or rectangle)
     m_type = TextureFlat;
 
@@ -997,19 +984,6 @@ inline unsigned int CDDSImage::size_dxtc(unsigned int width, unsigned int height
 // calculates size of uncompressed RGB texture in bytes
 inline unsigned int CDDSImage::size_rgb(unsigned int width, unsigned int height) {
     return width * height * m_components;
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// Swap the bytes in a 32 bit value
-inline void CDDSImage::swap_endian(void *val) {
-#ifdef MACOS
-    unsigned int *ival = (unsigned int *)val;
-
-    *ival = ((*ival >> 24) & 0x000000ff) |
-    ((*ival >> 8) & 0x0000ff00) |
-    ((*ival << 8) & 0x00ff0000) |
-    ((*ival << 24) & 0xff000000);
-#endif
 }
 
 ///////////////////////////////////////////////////////////////////////////////
