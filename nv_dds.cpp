@@ -171,7 +171,11 @@
 using namespace std;
 using namespace nv_dds;
 
-#define GL_BGR_EXT                 0x80E0
+#define GL_BGR_EXT                                        0x80E0
+#define GL_COMPRESSED_RGB_S3TC_DXT1_EXT                   0x83F0
+#define GL_COMPRESSED_RGBA_S3TC_DXT1_EXT                  0x83F1
+#define GL_COMPRESSED_RGBA_S3TC_DXT3_EXT                  0x83F2
+#define GL_COMPRESSED_RGBA_S3TC_DXT5_EXT                  0x83F3
 
 ///////////////////////////////////////////////////////////////////////////////
 // CDDSImage private functions
@@ -242,11 +246,158 @@ struct DDS_HEADER {
 
 string fourcc(uint32_t enc) {
     char c[5] = { '\0' };
-    c[0] = enc << 0 & 0xFF;
+    c[0] = enc >> 0 & 0xFF;
     c[1] = enc >> 8 & 0xFF;
     c[2] = enc >> 16 & 0xFF;
     c[3] = enc >> 24 & 0xFF;
     return c;
+}
+
+struct DXTColBlock {
+    uint16_t col0;
+    uint16_t col1;
+
+    uint8_t row[4];
+};
+
+struct DXT3AlphaBlock {
+    uint16_t row[4];
+};
+
+struct DXT5AlphaBlock {
+    uint8_t alpha0;
+    uint8_t alpha1;
+
+    uint8_t row[6];
+};
+
+///////////////////////////////////////////////////////////////////////////////
+// flip a DXT1 color block
+void flip_blocks_dxtc1(DXTColBlock *line, unsigned int numBlocks) {
+    DXTColBlock *curblock = line;
+
+    for (unsigned int i = 0; i < numBlocks; i++) {
+        std::swap(curblock->row[0], curblock->row[3]);
+        std::swap(curblock->row[1], curblock->row[2]);
+
+        curblock++;
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// flip a DXT3 color block
+void flip_blocks_dxtc3(DXTColBlock *line, unsigned int numBlocks) {
+    DXTColBlock *curblock = line;
+    DXT3AlphaBlock *alphablock;
+
+    for (unsigned int i = 0; i < numBlocks; i++) {
+        alphablock = (DXT3AlphaBlock*) curblock;
+
+        std::swap(alphablock->row[0], alphablock->row[3]);
+        std::swap(alphablock->row[1], alphablock->row[2]);
+
+        curblock++;
+
+        std::swap(curblock->row[0], curblock->row[3]);
+        std::swap(curblock->row[1], curblock->row[2]);
+
+        curblock++;
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// flip a DXT5 alpha block
+void flip_dxt5_alpha(DXT5AlphaBlock *block) {
+    uint8_t gBits[4][4];
+
+    const uint32_t mask = 0x00000007;          // bits = 00 00 01 11
+    uint32_t bits = 0;
+    memcpy(&bits, &block->row[0], sizeof(uint8_t) * 3);
+
+    gBits[0][0] = (uint8_t) (bits & mask);
+    bits >>= 3;
+    gBits[0][1] = (uint8_t) (bits & mask);
+    bits >>= 3;
+    gBits[0][2] = (uint8_t) (bits & mask);
+    bits >>= 3;
+    gBits[0][3] = (uint8_t) (bits & mask);
+    bits >>= 3;
+    gBits[1][0] = (uint8_t) (bits & mask);
+    bits >>= 3;
+    gBits[1][1] = (uint8_t) (bits & mask);
+    bits >>= 3;
+    gBits[1][2] = (uint8_t) (bits & mask);
+    bits >>= 3;
+    gBits[1][3] = (uint8_t) (bits & mask);
+
+    bits = 0;
+    memcpy(&bits, &block->row[3], sizeof(uint8_t) * 3);
+
+    gBits[2][0] = (uint8_t) (bits & mask);
+    bits >>= 3;
+    gBits[2][1] = (uint8_t) (bits & mask);
+    bits >>= 3;
+    gBits[2][2] = (uint8_t) (bits & mask);
+    bits >>= 3;
+    gBits[2][3] = (uint8_t) (bits & mask);
+    bits >>= 3;
+    gBits[3][0] = (uint8_t) (bits & mask);
+    bits >>= 3;
+    gBits[3][1] = (uint8_t) (bits & mask);
+    bits >>= 3;
+    gBits[3][2] = (uint8_t) (bits & mask);
+    bits >>= 3;
+    gBits[3][3] = (uint8_t) (bits & mask);
+
+    uint32_t *pBits = ((uint32_t*) &(block->row[0]));
+
+    *pBits = *pBits | (gBits[3][0] << 0);
+    *pBits = *pBits | (gBits[3][1] << 3);
+    *pBits = *pBits | (gBits[3][2] << 6);
+    *pBits = *pBits | (gBits[3][3] << 9);
+
+    *pBits = *pBits | (gBits[2][0] << 12);
+    *pBits = *pBits | (gBits[2][1] << 15);
+    *pBits = *pBits | (gBits[2][2] << 18);
+    *pBits = *pBits | (gBits[2][3] << 21);
+
+    pBits = ((uint32_t*) &(block->row[3]));
+
+#ifdef MACOS
+    *pBits &= 0x000000ff;
+#else
+    *pBits &= 0xff000000;
+#endif
+
+    *pBits = *pBits | (gBits[1][0] << 0);
+    *pBits = *pBits | (gBits[1][1] << 3);
+    *pBits = *pBits | (gBits[1][2] << 6);
+    *pBits = *pBits | (gBits[1][3] << 9);
+
+    *pBits = *pBits | (gBits[0][0] << 12);
+    *pBits = *pBits | (gBits[0][1] << 15);
+    *pBits = *pBits | (gBits[0][2] << 18);
+    *pBits = *pBits | (gBits[0][3] << 21);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// flip a DXT5 color block
+void flip_blocks_dxtc5(DXTColBlock *line, unsigned int numBlocks) {
+    DXTColBlock *curblock = line;
+    DXT5AlphaBlock *alphablock;
+
+    for (unsigned int i = 0; i < numBlocks; i++) {
+        alphablock = (DXT5AlphaBlock*) curblock;
+
+        flip_dxt5_alpha(alphablock);
+
+        curblock++;
+
+        std::swap(curblock->row[0], curblock->row[3]);
+        std::swap(curblock->row[1], curblock->row[2]);
+
+        curblock++;
+    }
 }
 }
 
@@ -817,6 +968,12 @@ void CDDSImage::upload_textureCubemap() {
     }
 }
 
+bool CDDSImage::is_compressed() {
+	return (m_format == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT)
+			|| (m_format == GL_COMPRESSED_RGBA_S3TC_DXT3_EXT)
+			|| (m_format == GL_COMPRESSED_RGBA_S3TC_DXT5_EXT);
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // clamps input size to [1-size]
 inline unsigned int CDDSImage::clamp_size(unsigned int size) {
@@ -887,7 +1044,7 @@ void CDDSImage::flip(CSurface &surface) {
 
         delete[] tmp;
     } else {
-        void (CDDSImage::*flipblocks)(DXTColBlock*, unsigned int);
+        void (*flipblocks)(DXTColBlock*, unsigned int);
         unsigned int xblocks = surface.get_width() / 4;
         unsigned int yblocks = surface.get_height() / 4;
         unsigned int blocksize;
@@ -895,15 +1052,15 @@ void CDDSImage::flip(CSurface &surface) {
         switch (m_format) {
         case GL_COMPRESSED_RGBA_S3TC_DXT1_EXT:
             blocksize = 8;
-            flipblocks = &CDDSImage::flip_blocks_dxtc1;
+            flipblocks = flip_blocks_dxtc1;
             break;
         case GL_COMPRESSED_RGBA_S3TC_DXT3_EXT:
             blocksize = 16;
-            flipblocks = &CDDSImage::flip_blocks_dxtc3;
+            flipblocks = flip_blocks_dxtc3;
             break;
         case GL_COMPRESSED_RGBA_S3TC_DXT5_EXT:
             blocksize = 16;
-            flipblocks = &CDDSImage::flip_blocks_dxtc5;
+            flipblocks = flip_blocks_dxtc5;
             break;
         default:
             return;
@@ -920,8 +1077,8 @@ void CDDSImage::flip(CSurface &surface) {
             top = (DXTColBlock*) ((uint8_t*) surface + j * linesize);
             bottom = (DXTColBlock*) ((uint8_t*) surface + (((yblocks - j) - 1) * linesize));
 
-            (this->*flipblocks)(top, xblocks);
-            (this->*flipblocks)(bottom, xblocks);
+            flipblocks(top, xblocks);
+            flipblocks(bottom, xblocks);
 
             // swap
             memcpy(tmp, bottom, linesize);
@@ -938,135 +1095,6 @@ void CDDSImage::flip_texture(CTexture &texture) {
 
     for (unsigned int i = 0; i < texture.get_num_mipmaps(); i++) {
         flip(texture.get_mipmap(i));
-    }
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// flip a DXT1 color block
-void CDDSImage::flip_blocks_dxtc1(DXTColBlock *line, unsigned int numBlocks) {
-    DXTColBlock *curblock = line;
-
-    for (unsigned int i = 0; i < numBlocks; i++) {
-        std::swap(curblock->row[0], curblock->row[3]);
-        std::swap(curblock->row[1], curblock->row[2]);
-
-        curblock++;
-    }
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// flip a DXT3 color block
-void CDDSImage::flip_blocks_dxtc3(DXTColBlock *line, unsigned int numBlocks) {
-    DXTColBlock *curblock = line;
-    DXT3AlphaBlock *alphablock;
-
-    for (unsigned int i = 0; i < numBlocks; i++) {
-        alphablock = (DXT3AlphaBlock*) curblock;
-
-        std::swap(alphablock->row[0], alphablock->row[3]);
-        std::swap(alphablock->row[1], alphablock->row[2]);
-
-        curblock++;
-
-        std::swap(curblock->row[0], curblock->row[3]);
-        std::swap(curblock->row[1], curblock->row[2]);
-
-        curblock++;
-    }
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// flip a DXT5 alpha block
-void CDDSImage::flip_dxt5_alpha(DXT5AlphaBlock *block) {
-    uint8_t gBits[4][4];
-
-    const uint32_t mask = 0x00000007;          // bits = 00 00 01 11
-    uint32_t bits = 0;
-    memcpy(&bits, &block->row[0], sizeof(uint8_t) * 3);
-
-    gBits[0][0] = (uint8_t) (bits & mask);
-    bits >>= 3;
-    gBits[0][1] = (uint8_t) (bits & mask);
-    bits >>= 3;
-    gBits[0][2] = (uint8_t) (bits & mask);
-    bits >>= 3;
-    gBits[0][3] = (uint8_t) (bits & mask);
-    bits >>= 3;
-    gBits[1][0] = (uint8_t) (bits & mask);
-    bits >>= 3;
-    gBits[1][1] = (uint8_t) (bits & mask);
-    bits >>= 3;
-    gBits[1][2] = (uint8_t) (bits & mask);
-    bits >>= 3;
-    gBits[1][3] = (uint8_t) (bits & mask);
-
-    bits = 0;
-    memcpy(&bits, &block->row[3], sizeof(uint8_t) * 3);
-
-    gBits[2][0] = (uint8_t) (bits & mask);
-    bits >>= 3;
-    gBits[2][1] = (uint8_t) (bits & mask);
-    bits >>= 3;
-    gBits[2][2] = (uint8_t) (bits & mask);
-    bits >>= 3;
-    gBits[2][3] = (uint8_t) (bits & mask);
-    bits >>= 3;
-    gBits[3][0] = (uint8_t) (bits & mask);
-    bits >>= 3;
-    gBits[3][1] = (uint8_t) (bits & mask);
-    bits >>= 3;
-    gBits[3][2] = (uint8_t) (bits & mask);
-    bits >>= 3;
-    gBits[3][3] = (uint8_t) (bits & mask);
-
-    uint32_t *pBits = ((uint32_t*) &(block->row[0]));
-
-    *pBits = *pBits | (gBits[3][0] << 0);
-    *pBits = *pBits | (gBits[3][1] << 3);
-    *pBits = *pBits | (gBits[3][2] << 6);
-    *pBits = *pBits | (gBits[3][3] << 9);
-
-    *pBits = *pBits | (gBits[2][0] << 12);
-    *pBits = *pBits | (gBits[2][1] << 15);
-    *pBits = *pBits | (gBits[2][2] << 18);
-    *pBits = *pBits | (gBits[2][3] << 21);
-
-    pBits = ((uint32_t*) &(block->row[3]));
-
-#ifdef MACOS
-    *pBits &= 0x000000ff;
-#else
-    *pBits &= 0xff000000;
-#endif
-
-    *pBits = *pBits | (gBits[1][0] << 0);
-    *pBits = *pBits | (gBits[1][1] << 3);
-    *pBits = *pBits | (gBits[1][2] << 6);
-    *pBits = *pBits | (gBits[1][3] << 9);
-
-    *pBits = *pBits | (gBits[0][0] << 12);
-    *pBits = *pBits | (gBits[0][1] << 15);
-    *pBits = *pBits | (gBits[0][2] << 18);
-    *pBits = *pBits | (gBits[0][3] << 21);
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// flip a DXT5 color block
-void CDDSImage::flip_blocks_dxtc5(DXTColBlock *line, unsigned int numBlocks) {
-    DXTColBlock *curblock = line;
-    DXT5AlphaBlock *alphablock;
-
-    for (unsigned int i = 0; i < numBlocks; i++) {
-        alphablock = (DXT5AlphaBlock*) curblock;
-
-        flip_dxt5_alpha(alphablock);
-
-        curblock++;
-
-        std::swap(curblock->row[0], curblock->row[3]);
-        std::swap(curblock->row[1], curblock->row[2]);
-
-        curblock++;
     }
 }
 

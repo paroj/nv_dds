@@ -15,30 +15,7 @@
 #include <GL/glext.h>
 #endif
 
-#define GL_COMPRESSED_RGB_S3TC_DXT1_EXT                   0x83F0
-#define GL_COMPRESSED_RGBA_S3TC_DXT1_EXT                  0x83F1
-#define GL_COMPRESSED_RGBA_S3TC_DXT3_EXT                  0x83F2
-#define GL_COMPRESSED_RGBA_S3TC_DXT5_EXT                  0x83F3
-
 namespace nv_dds {
-struct DXTColBlock {
-    uint16_t col0;
-    uint16_t col1;
-
-    uint8_t row[4];
-};
-
-struct DXT3AlphaBlock {
-    uint16_t row[4];
-};
-
-struct DXT5AlphaBlock {
-    uint8_t alpha0;
-    uint8_t alpha1;
-
-    uint8_t row[6];
-};
-
 enum TextureType {
     TextureNone, TextureFlat,    // 1D, 2D textures
     Texture3D,
@@ -218,11 +195,7 @@ public:
         return m_type;
     }
 
-    bool is_compressed() {
-        return (m_format == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT)
-                || (m_format == GL_COMPRESSED_RGBA_S3TC_DXT3_EXT)
-                || (m_format == GL_COMPRESSED_RGBA_S3TC_DXT5_EXT);
-    }
+    bool is_compressed();
 
     bool is_cubemap() {
         return (m_type == TextureCubemap);
@@ -256,11 +229,6 @@ private:
 
     void flip(CSurface &surface);
     void flip_texture(CTexture &texture);
-
-    void flip_blocks_dxtc1(DXTColBlock *line, unsigned int numBlocks);
-    void flip_blocks_dxtc3(DXTColBlock *line, unsigned int numBlocks);
-    void flip_blocks_dxtc5(DXTColBlock *line, unsigned int numBlocks);
-    void flip_dxt5_alpha(DXT5AlphaBlock *block);
 
     void write_texture(const CTexture &texture, std::ostream& os);
 
