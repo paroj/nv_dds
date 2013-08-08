@@ -793,7 +793,7 @@ void CDDSImage::clear() {
     m_images.clear();
 }
 
-#ifndef GL_ES_VERSION_2_0
+#if !defined(GL_ES_VERSION_2_0) && !defined(GL_ES_VERSION_3_0)
 ///////////////////////////////////////////////////////////////////////////////
 // uploads a compressed/uncompressed 1D texture
 void CDDSImage::upload_texture1D() {
@@ -890,7 +890,7 @@ void CDDSImage::upload_texture2D(uint32_t imageIndex, uint32_t target) {
     }
 }
 
-#if !defined(GL_ES_VERSION_2_0) && !defined(GL_ES_VERSION_3_0)
+#ifndef GL_ES_VERSION_2_0
 ///////////////////////////////////////////////////////////////////////////////
 // uploads a compressed/uncompressed 3D texture
 void CDDSImage::upload_texture3D() {

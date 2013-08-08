@@ -113,13 +113,13 @@ public:
     void load(const std::string& filename, bool flipImage = true);
     void save(const std::string& filename, bool flipImage = true);
 
-#ifndef GL_ES_VERSION_2_0
+#if !defined(GL_ES_VERSION_2_0) && !defined(GL_ES_VERSION_3_0)
     void upload_texture1D();
 #endif
 
     void upload_texture2D(uint32_t imageIndex = 0, uint32_t target = GL_TEXTURE_2D);
 
-#if !defined(GL_ES_VERSION_2_0) && !defined(GL_ES_VERSION_3_0)
+#ifndef GL_ES_VERSION_2_0
     void upload_texture3D();
 #endif
 
