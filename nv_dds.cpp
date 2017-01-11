@@ -789,6 +789,7 @@ void CDDSImage::clear() {
     m_images.clear();
 }
 
+#ifndef NV_DDS_NO_GL_SUPPORT
 #if !defined(GL_ES_VERSION_2_0) && !defined(GL_ES_VERSION_3_0)
 ///////////////////////////////////////////////////////////////////////////////
 // uploads a compressed/uncompressed 1D texture
@@ -950,6 +951,7 @@ void CDDSImage::upload_textureCubemap() {
         upload_texture2D(n, target);
     }
 }
+#endif
 
 bool CDDSImage::is_compressed() {
 	return (m_format == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT)
