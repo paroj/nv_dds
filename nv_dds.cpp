@@ -492,7 +492,7 @@ void CDDSImage::create_textureCubemap(unsigned int format, unsigned int componen
 void CDDSImage::load(const string& filename, bool flipImage) {
     assert(!filename.empty());
 
-    fstream fs(filename.c_str(), ios::binary);
+    ifstream fs(filename.c_str(), ios::binary);
     load(fs, flipImage);
 }
 
