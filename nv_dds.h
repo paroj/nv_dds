@@ -7,10 +7,12 @@
 #include <assert.h>
 #include <stdint.h>
 
-#ifdef __APPLE__
-#include <OpenGL/gl.h>
-#else
-#include <GL/gl.h>
+#ifndef NV_DDS_NO_GL_SUPPORT
+    #ifdef __APPLE__
+        #include <OpenGL/gl.h>
+    #else
+        #include <GL/gl.h>
+    #endif
 #endif
 
 namespace nv_dds {
@@ -19,6 +21,14 @@ enum TextureType {
     Texture3D,
     TextureCubemap
 };
+
+#ifdef NV_DDS_NO_GL_SUPPORT
+    #define GL_RGB                            0x1907
+    #define GL_RGBA                           0x1908
+    #define GL_LUMINANCE                      0x1909
+    #define GL_BGR_EXT                        0x80E0
+    #define GL_BGRA_EXT                       0x80E1
+#endif
 
 class CSurface {
 public:
@@ -111,6 +121,7 @@ public:
     void load(const std::string& filename, bool flipImage = true);
     void save(const std::string& filename, bool flipImage = true);
 
+#ifndef NV_DDS_NO_GL_SUPPORT
 #if !defined(GL_ES_VERSION_2_0) && !defined(GL_ES_VERSION_3_0)
     void upload_texture1D();
 #endif
@@ -122,6 +133,7 @@ public:
 #endif
 
     void upload_textureCubemap();
+#endif
 
     operator uint8_t*() {
         assert(m_valid);
