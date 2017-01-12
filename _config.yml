@@ -1,0 +1,8 @@
+title: NV DDS
+description: DDS image loader for OpenGL2/ OpenGL ES2
+google_analytics: 
+show_downloads: true
+theme: jekyll-theme-minimal
+
+gems:
+  - jekyll-mentions
