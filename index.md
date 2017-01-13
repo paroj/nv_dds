@@ -2,7 +2,8 @@
 this project tracks updates/ bugfixes for the DDS loader from the nvidia SDK and ports it to OpenGL2+ and OpenGL ES2
 
 sample usage
-```cpp
+
+```
  CDDSImage image;
  GLuint texobj;
 
